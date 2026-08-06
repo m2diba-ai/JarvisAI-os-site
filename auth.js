@@ -60,7 +60,7 @@ function injectAuthModal() {
     if (e.target === overlay) hideAuthModal();
   });
 
-  let pendingEmail = "";
+  const PENDING_EMAIL_KEY = "jarvis_pending_login_email";
 
   document.getElementById("authSendCodeBtn").addEventListener("click", async () => {
     const email = document.getElementById("authEmailInput").value.trim();
@@ -76,7 +76,10 @@ function injectAuthModal() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not send code.");
 
-      pendingEmail = email;
+      // sessionStorage (not a plain JS variable) so this survives the
+      // tab getting reloaded - very likely on mobile, where checking
+      // the code means switching away to the email app and back.
+      sessionStorage.setItem(PENDING_EMAIL_KEY, email);
       document.getElementById("authStepEmail").hidden = true;
       document.getElementById("authStepCode").hidden = false;
       document.getElementById("authCodeInput").focus();
@@ -87,7 +90,12 @@ function injectAuthModal() {
 
   document.getElementById("authVerifyBtn").addEventListener("click", async () => {
     const code = document.getElementById("authCodeInput").value.trim();
+    const pendingEmail = sessionStorage.getItem(PENDING_EMAIL_KEY);
     if (!code) return;
+    if (!pendingEmail) {
+      setAuthError("Your session expired - please request a new code.");
+      return;
+    }
     setAuthError("");
 
     try {
@@ -99,6 +107,7 @@ function injectAuthModal() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Invalid code.");
 
+      sessionStorage.removeItem(PENDING_EMAIL_KEY);
       setToken(data.token);
       hideAuthModal();
       window.dispatchEvent(new CustomEvent("jarvis-signed-in"));
