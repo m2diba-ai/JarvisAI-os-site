@@ -2,9 +2,7 @@
 // used by pricing.html and chat.html - both need to know who's
 // signed in and call the hosted API with their token.
 
-// TODO: update once the backend is deployed on Render (see
-// render.yaml in the main repo).
-const API_BASE = "https://jarvis-api.onrender.com";
+const API_BASE = "https://jarvis-api-94bm.onrender.com";
 
 const TOKEN_KEY = "jarvis_token";
 
