@@ -66,8 +66,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <p class="chat-gate" id="chatGate">Sign in to start chatting &mdash; free accounts get 20 messages/day, Pro is unlimited.</p>
 
     <div class="chat-window">
+      <div class="chat-toolbar">
+        <select id="modelPicker" class="model-picker" disabled></select>
+        <span id="imagePreviewWrap" class="image-preview-wrap" hidden>
+          <img id="imagePreview" class="image-preview" alt="Attached image">
+          <button id="imageRemoveBtn" class="image-remove-btn" type="button" aria-label="Remove image">&times;</button>
+        </span>
+      </div>
       <div class="chat-log" id="chatLog"></div>
       <div class="chat-input-row">
+        <button id="attachBtn" class="attach-btn" type="button" disabled title="Sign in to chat" aria-label="Attach image">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        </button>
+        <input type="file" id="imageInput" accept="image/*" hidden>
         <input type="text" id="chatInput" placeholder="Sign in to chat…" disabled>
         <button id="chatSendBtn" class="btn btn-primary btn-small" type="button" disabled>Send</button>
       </div>
@@ -112,9 +123,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   const log = document.getElementById("chatLog");
   const input = document.getElementById("chatInput");
   const sendBtn = document.getElementById("chatSendBtn");
+  const modelPicker = document.getElementById("modelPicker");
+  const attachBtn = document.getElementById("attachBtn");
+  const imageInput = document.getElementById("imageInput");
+  const imagePreviewWrap = document.getElementById("imagePreviewWrap");
+  const imagePreview = document.getElementById("imagePreview");
+  const imageRemoveBtn = document.getElementById("imageRemoveBtn");
 
   let conversationId = null;
   let sending = false;
+  let isPro = false;
+  let pendingImageBase64 = null;
 
   function addMessage(role, text) {
     const div = document.createElement("div");
@@ -127,25 +146,83 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   function setEnabled(enabled) {
     input.disabled = !enabled;
     sendBtn.disabled = !enabled;
+    modelPicker.disabled = !enabled;
+    attachBtn.disabled = !enabled || !isPro;
+    attachBtn.title = !enabled
+      ? "Sign in to chat"
+      : (isPro ? "Attach an image" : "Image understanding is a Pro feature");
     input.placeholder = enabled ? "Type a message…" : "Sign in to chat…";
   }
 
+  async function loadModels() {
+    // Pro-only options render disabled (with a "(Pro)" suffix) rather
+    // than being hidden entirely - free users can see what exists
+    // without being able to pick it, same spirit as pricing.html.
+    // Unconfigured providers (no key set up on the backend) are left
+    // out entirely instead of offering an option that would just fail.
+    try {
+      const res = await fetch(`${API_BASE}/chat/models`);
+      const models = await res.json();
+      modelPicker.innerHTML = "";
+      models.filter((m) => m.configured).forEach((m) => {
+        const option = document.createElement("option");
+        option.value = m.id;
+        option.textContent = m.pro_only ? `${m.label} (Pro)` : m.label;
+        option.disabled = m.pro_only && !isPro;
+        modelPicker.appendChild(option);
+      });
+    } catch (e) {
+      // Picker just stays empty/whatever it already had - send()
+      // falls back to "groq" regardless.
+    }
+  }
+
+  function clearImage() {
+    pendingImageBase64 = null;
+    imageInput.value = "";
+    imagePreviewWrap.hidden = true;
+    imagePreview.src = "";
+  }
+
+  attachBtn.addEventListener("click", () => imageInput.click());
+
+  imageInput.addEventListener("change", () => {
+    const file = imageInput.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      pendingImageBase64 = dataUrl.split(",")[1];
+      imagePreview.src = dataUrl;
+      imagePreviewWrap.hidden = false;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  imageRemoveBtn.addEventListener("click", clearImage);
+
   async function refreshGate() {
     if (!isSignedIn()) {
+      isPro = false;
       gate.textContent = "Sign in to start chatting — free accounts get 20 messages/day, Pro is unlimited.";
       setEnabled(false);
+      await loadModels();
       return;
     }
     try {
       const res = await authFetch("/billing/status");
       const data = await res.json();
-      gate.textContent = data.plan === "pro"
-        ? "You're on Pro — unlimited chat."
-        : "Signed in — Free plan, 20 messages/day. Upgrade on the Pricing page for unlimited.";
+      isPro = data.plan === "pro";
+      gate.textContent = isPro
+        ? "You're on Pro — unlimited chat, every model, image understanding."
+        : "Signed in — Free plan, 20 messages/day on Groq. Upgrade on the Pricing page for more.";
     } catch (e) {
+      isPro = false;
       gate.textContent = "Signed in.";
     }
     setEnabled(true);
+    await loadModels();
     if (!log.children.length) {
       addMessage("system", "Hey, I'm Jarvis. Ask me anything.");
     }
@@ -153,17 +230,25 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
   async function send() {
     const message = input.value.trim();
-    if (!message || sending) return;
+    if ((!message && !pendingImageBase64) || sending) return;
 
     sending = true;
     input.value = "";
-    addMessage("user", message);
+    addMessage("user", message || "(image)");
     sendBtn.disabled = true;
+
+    const body = {
+      message,
+      conversation_id: conversationId,
+      model: modelPicker.value || "groq",
+    };
+    if (pendingImageBase64) body.image = pendingImageBase64;
+    clearImage();
 
     try {
       const res = await authFetch("/chat/web", {
         method: "POST",
-        body: JSON.stringify({ message, conversation_id: conversationId }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -186,14 +271,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     if (e.key === "Enter") send();
   });
 
-  document.getElementById("navSignIn").addEventListener("click", () => {
-    // auth.js's own handler runs first (shows the modal); this just
-    // makes the chat gate re-check right after a successful sign-in.
-  });
   window.addEventListener("jarvis-signed-in", refreshGate);
   window.addEventListener("jarvis-signed-out", () => {
     conversationId = null;
     log.innerHTML = "";
+    clearImage();
     refreshGate();
   });
 
