@@ -566,6 +566,44 @@ h2{
   line-height: 1.6;
 }
 
+/* ==================== DRIVEOS TEASER ==================== */
+.driveos-section{ padding: 10px 0 70px; position: relative; z-index: 1; }
+
+.driveos-card{
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  max-width: 680px;
+  margin: 0 auto;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 32px;
+}
+
+.driveos-icon{
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  color: var(--ring-mid);
+}
+
+.driveos-text .label-tag{ margin-bottom: 8px; }
+.driveos-text h2{ font-size: 24px; margin: 0 0 8px; }
+.driveos-text .section-sub{ margin: 0 0 16px; max-width: none; }
+
+.status-badge{
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 99px;
+  border: 1px solid var(--border-strong);
+  background: rgba(255,255,255,0.03);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
 /* ==================== FOOTER ==================== */
 .footer{
   border-top: 1px solid var(--border);
@@ -967,6 +1005,7 @@ h2{
   .steps{ grid-template-columns: 1fr; }
   .download-grid{ grid-template-columns: 1fr; }
   .pricing-grid{ grid-template-columns: 1fr; }
+  .driveos-card{ flex-direction: column; text-align: center; }
 }
 
 @media (max-width: 720px){
