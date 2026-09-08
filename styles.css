@@ -853,152 +853,6 @@ h2{
   margin: 4px 0 0;
 }
 
-/* ==================== CHAT WIDGET ==================== */
-.chat-section{ padding: 20px 0 110px; position: relative; z-index: 1; }
-
-.chat-window{
-  max-width: 680px;
-  margin: 0 auto;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
-.chat-toolbar{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-}
-
-.model-picker{
-  background: var(--bg-elevated);
-  color: var(--text);
-  border: 1px solid var(--border-strong);
-  border-radius: 99px;
-  padding: 7px 14px;
-  font-size: 13px;
-  font-family: var(--font-body);
-  cursor: pointer;
-}
-
-.model-picker:disabled{ opacity: 0.5; cursor: not-allowed; }
-
-.image-preview-wrap{
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.image-preview-wrap[hidden]{ display: none; }
-
-.image-preview{
-  width: 32px;
-  height: 32px;
-  object-fit: cover;
-  border-radius: 6px;
-  border: 1px solid var(--border-strong);
-}
-
-.image-remove-btn{
-  background: none;
-  border: none;
-  color: var(--text-faint);
-  font-size: 18px;
-  cursor: pointer;
-  line-height: 1;
-}
-
-.image-remove-btn:hover{ color: var(--text); }
-
-.attach-btn{
-  background: none;
-  border: 1px solid var(--border-strong);
-  color: var(--text-secondary);
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-  padding: 0;
-}
-
-.attach-btn:hover:not(:disabled){ color: var(--text); border-color: var(--ring-mid); }
-.attach-btn:disabled{ opacity: 0.4; cursor: not-allowed; }
-.attach-btn svg{ width: 18px; height: 18px; }
-
-.chat-log{
-  height: 440px;
-  overflow-y: auto;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.chat-msg{
-  max-width: 80%;
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
-  font-size: 14.5px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-}
-
-.chat-msg.user{
-  align-self: flex-end;
-  background: var(--accent-grad);
-  color: #041022;
-}
-
-.chat-msg.reply{
-  align-self: flex-start;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  color: var(--text);
-}
-
-.chat-msg.system{
-  align-self: center;
-  color: var(--text-faint);
-  font-size: 13px;
-  background: none;
-}
-
-.chat-input-row{
-  display: flex;
-  gap: 10px;
-  padding: 16px;
-  border-top: 1px solid var(--border);
-}
-
-.chat-input-row input{
-  flex: 1;
-  padding: 12px 16px;
-  border-radius: 99px;
-  border: 1px solid var(--border-strong);
-  background: var(--bg-elevated);
-  color: var(--text);
-  font-size: 14.5px;
-  font-family: var(--font-body);
-}
-
-.chat-input-row input:focus{ outline: none; border-color: var(--ring-mid); }
-
-.chat-gate{
-  max-width: 680px;
-  margin: 0 auto 20px;
-  text-align: center;
-  font-size: 13.5px;
-  color: var(--text-secondary);
-}
-
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 860px){
   .feature-grid{ grid-template-columns: repeat(2, 1fr); }
@@ -1014,11 +868,622 @@ h2{
   .nav-toggle{ display: flex; }
   .feature-grid{ grid-template-columns: 1fr; }
   .hero{ padding-top: 120px; }
-  .chat-log{ height: 360px; }
-  .chat-msg{ max-width: 90%; }
 }
 
 @media (prefers-reduced-motion: reduce){
   .hero-ring, .scroll-cue span, .cursor{ animation: none; }
+}
+
+/* ==================== CHAT APP (full-screen, replaces the old
+   small demo widget - a real ChatGPT-style app shell instead of a
+   box embedded in the marketing page) ==================== */
+:root{
+  --nav-h: 66px;
+}
+
+body.chat-page{
+  overflow: hidden;
+  height: 100vh;
+}
+
+body.chat-page #nav{
+  /* Always the "scrolled" opaque look - the app shell below covers
+     the whole viewport and never produces a real page scroll, so the
+     scroll-triggered class in common.js would otherwise never fire,
+     leaving nav text illegible over colorful chat content. */
+  background: rgba(1,3,12,0.92);
+  backdrop-filter: blur(14px);
+  border-bottom-color: var(--border);
+}
+
+body.chat-page #stars{ display: none; }
+
+.jarvis-app{
+  position: fixed;
+  top: var(--nav-h);
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+}
+
+.jarvis-sidebar{
+  width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 12px;
+  background: var(--bg-elevated);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+
+.jarvis-nav-btn{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  background: none;
+  border: none;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.jarvis-nav-btn:hover{ background: rgba(255,255,255,0.05); }
+.jarvis-nav-btn svg{ width: 17px; height: 17px; flex-shrink: 0; color: var(--text-secondary); }
+
+.jarvis-nav-group{ display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; }
+
+.jarvis-upgrade-btn{ color: var(--ring-light); }
+.jarvis-upgrade-btn svg{ color: var(--ring-mid); }
+
+.jarvis-history-label{
+  margin: 14px 10px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.jarvis-history-list{ display: flex; flex-direction: column; gap: 1px; }
+
+.jarvis-recents-empty{ padding: 8px 10px; font-size: 13px; color: var(--text-faint); }
+
+.jarvis-recent-item{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.jarvis-recent-item:hover{ background: rgba(255,255,255,0.05); color: var(--text); }
+.jarvis-recent-item.active{ background: rgba(255,255,255,0.08); color: var(--text); }
+
+.jarvis-recent-item-title{
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jarvis-recent-item-delete{
+  flex-shrink: 0;
+  width: 20px; height: 20px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-size: 15px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.jarvis-recent-item:hover .jarvis-recent-item-delete{ display: flex; }
+.jarvis-recent-item-delete:hover{ background: rgba(229,103,122,0.15); color: #E5677A; }
+
+.jarvis-sidebar-spacer{ flex: 1; }
+
+.jarvis-sidebar-footer{ position: relative; padding-top: 8px; border-top: 1px solid var(--border); }
+
+.jarvis-user-card{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--text);
+}
+
+.jarvis-user-card:hover{ background: rgba(255,255,255,0.05); }
+
+.jarvis-user-avatar{
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--accent-grad);
+  color: #041022;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.jarvis-user-name{ font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.jarvis-user-menu{
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 8px;
+  right: 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 6px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+}
+
+.jarvis-menu-item{
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.jarvis-menu-item:hover{ background: rgba(255,255,255,0.06); }
+.jarvis-menu-divider{ height: 1px; background: var(--border); margin: 4px 2px; }
+
+.jarvis-main{
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.jarvis-toolbar{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.jarvis-sidebar-toggle{
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+}
+.jarvis-sidebar-toggle svg{ width: 20px; height: 20px; }
+
+.jarvis-sidebar-backdrop{ display: none; }
+
+.jarvis-model-picker{
+  background: var(--bg-elevated);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: 99px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+.jarvis-model-picker:disabled{ opacity: 0.5; cursor: not-allowed; }
+
+.jarvis-plan-badge{ font-size: 12.5px; color: var(--text-faint); }
+
+.jarvis-chat-scroll{
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 20px 8px;
+}
+
+.jarvis-chat-inner{
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.jarvis-empty, .jarvis-signedout{
+  max-width: 560px;
+  margin: 40px auto 0;
+  text-align: center;
+}
+
+.jarvis-empty .jarvis-orb, .jarvis-signedout .jarvis-orb{
+  width: 56px; height: 56px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: var(--accent-grad);
+  box-shadow: 0 0 30px rgba(79,168,255,0.4);
+}
+
+.jarvis-empty h1, .jarvis-signedout h1{
+  font-family: var(--font-display);
+  font-size: 26px;
+  margin-bottom: 8px;
+}
+
+.jarvis-empty p, .jarvis-signedout p{
+  color: var(--text-secondary);
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+
+.jarvis-signedout{ margin-top: 90px; }
+.jarvis-signedout .btn{ margin-top: 18px; }
+
+.jarvis-suggestions{
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.jarvis-chip{
+  padding: 8px 14px;
+  border-radius: 99px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+.jarvis-chip:hover{ color: var(--text); border-color: var(--ring-mid); }
+
+.jarvis-msg-group{ display: flex; flex-direction: column; }
+.jarvis-msg-group.user{ align-items: flex-end; }
+.jarvis-msg-group.assistant{ align-items: flex-start; }
+
+.jarvis-msg-row{ display: flex; align-items: flex-start; gap: 10px; max-width: 100%; }
+
+.jarvis-msg-avatar{
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--accent-grad);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.jarvis-bubble{
+  padding: 11px 15px;
+  border-radius: var(--radius-sm);
+  font-size: 14.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.jarvis-msg-group.user .jarvis-bubble{
+  background: var(--accent-grad);
+  color: #041022;
+  max-width: 480px;
+}
+
+.jarvis-msg-group.assistant .jarvis-bubble{
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text);
+  max-width: 640px;
+}
+
+.jarvis-msg-group.system .jarvis-bubble{
+  background: none;
+  color: var(--text-faint);
+  font-size: 13px;
+  align-self: center;
+}
+
+.jarvis-typing-dots{ display: flex; gap: 4px; padding: 4px 0; }
+.jarvis-typing-dots span{
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  animation: jarvis-typing 1.2s ease-in-out infinite;
+}
+.jarvis-typing-dots span:nth-child(2){ animation-delay: 0.15s; }
+.jarvis-typing-dots span:nth-child(3){ animation-delay: 0.3s; }
+@keyframes jarvis-typing{
+  0%, 60%, 100%{ opacity: 0.3; transform: translateY(0); }
+  30%{ opacity: 1; transform: translateY(-3px); }
+}
+
+.jarvis-composer{
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 10px 20px 18px;
+  flex-shrink: 0;
+}
+
+.jarvis-image-preview-wrap{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.jarvis-image-preview-wrap[hidden]{ display: none; }
+
+.jarvis-image-preview{
+  width: 32px; height: 32px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+}
+
+.jarvis-image-remove-btn{
+  background: none; border: none;
+  color: var(--text-faint);
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+}
+.jarvis-image-remove-btn:hover{ color: var(--text); }
+
+.jarvis-composer-inner{
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px 8px 8px 14px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+}
+
+.jarvis-composer-inner:focus-within{ border-color: var(--ring-mid); }
+
+.jarvis-attach-btn{
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  border-radius: 50%;
+  width: 32px; height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  margin-bottom: 2px;
+}
+
+.jarvis-attach-btn:hover:not(:disabled){ color: var(--text); }
+.jarvis-attach-btn:disabled{ opacity: 0.35; cursor: not-allowed; }
+.jarvis-attach-btn svg{ width: 18px; height: 18px; }
+
+.jarvis-composer textarea{
+  flex: 1;
+  resize: none;
+  max-height: 200px;
+  padding: 6px 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  line-height: 1.5;
+  outline: none;
+}
+
+.jarvis-composer textarea:disabled{ opacity: 0.6; }
+.jarvis-composer textarea::placeholder{ color: var(--text-faint); }
+
+.jarvis-send-btn{
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--accent-grad);
+  color: #041022;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.jarvis-send-btn:disabled{ opacity: 0.4; cursor: not-allowed; }
+
+.jarvis-composer-hint{
+  margin-top: 8px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+/* Search modal - reuses the auth modal's overlay pattern */
+.jarvis-modal-overlay{
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(1,3,12,0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 90px 20px 20px;
+}
+
+.jarvis-modal-overlay[hidden]{ display: none; }
+
+.jarvis-modal{
+  width: 100%;
+  max-width: 520px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.jarvis-modal-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.jarvis-modal-header h2{ font-family: var(--font-display); font-size: 17px; }
+
+.jarvis-modal-close{
+  background: none; border: none;
+  color: var(--text-faint);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.jarvis-modal-input{
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.jarvis-modal-input:focus{ outline: none; border-color: var(--ring-mid); }
+
+.jarvis-search-results{ overflow-y: auto; }
+
+.jarvis-search-empty{ padding: 20px 4px; color: var(--text-faint); font-size: 13.5px; text-align: center; }
+
+.jarvis-search-result{
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.jarvis-search-result:hover{ background: rgba(255,255,255,0.05); }
+.jarvis-search-result-title{ font-size: 13.5px; margin-bottom: 2px; }
+.jarvis-search-result-snippet{ font-size: 13px; color: var(--text-secondary); }
+.jarvis-search-result-snippet mark{ background: rgba(79,168,255,0.35); color: var(--text); border-radius: 2px; }
+
+/* ==================== MEMORY PAGE ==================== */
+.jarvis-memory-page{
+  max-width: 640px;
+  margin: 0 auto;
+  padding: calc(var(--nav-h) + 40px) 24px 80px;
+}
+
+.jarvis-memory-page h1{
+  font-family: var(--font-display);
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.jarvis-memory-page h1 .jarvis-orb{
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--accent-grad);
+}
+
+.jarvis-memory-back{ margin-left: auto; }
+
+.jarvis-memory-sub{ margin-top: 6px; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
+
+.jarvis-memory-toolbar{ margin-top: 20px; }
+
+.jarvis-memory-group-label{
+  margin: 20px 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.jarvis-memory-item{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.jarvis-memory-item-body{ flex: 1; min-width: 0; }
+.jarvis-memory-item-key{ font-size: 14px; text-transform: capitalize; }
+.jarvis-memory-item-value{ margin-top: 2px; font-size: 13px; color: var(--text-secondary); overflow-wrap: anywhere; }
+
+.jarvis-memory-item-delete{
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-faint);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.jarvis-memory-item-delete:hover{ background: rgba(229,103,122,0.15); color: #E5677A; }
+
+.jarvis-memory-empty{ padding: 40px 4px; text-align: center; color: var(--text-faint); font-size: 14px; }
+
+/* ==================== CHAT APP RESPONSIVE ==================== */
+@media (max-width: 760px){
+  .jarvis-sidebar{
+    position: fixed;
+    top: var(--nav-h); bottom: 0; left: 0;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: 20px 0 40px rgba(0,0,0,0.4);
+  }
+  .jarvis-sidebar.open{ transform: translateX(0); }
+  .jarvis-sidebar-toggle{ display: flex; }
+  .jarvis-sidebar-backdrop{
+    display: none;
+    position: fixed;
+    top: var(--nav-h); left: 0; right: 0; bottom: 0;
+    z-index: 40;
+    background: rgba(0,0,0,0.4);
+  }
+  .jarvis-sidebar-backdrop.open{ display: block; }
+  .jarvis-msg-group.user .jarvis-bubble{ max-width: 85%; }
+  .jarvis-msg-group.assistant .jarvis-bubble{ max-width: 85%; }
 }
 

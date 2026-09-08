@@ -5,15 +5,24 @@
 const API_BASE = "https://jarvis-api-94bm.onrender.com";
 
 const TOKEN_KEY = "jarvis_token";
+const USERNAME_KEY = "jarvis_username";
 
 function getToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
-function setToken(token) {
+function getUsername() {
+  return localStorage.getItem(USERNAME_KEY) || "";
+}
+// username is optional so older callers keep working - chat.html shows
+// it on the account card, and anyone signed in before it started being
+// stored just falls back to a generic label rather than breaking.
+function setToken(token, username) {
   localStorage.setItem(TOKEN_KEY, token);
+  if (username) localStorage.setItem(USERNAME_KEY, username);
 }
 function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USERNAME_KEY);
 }
 function isSignedIn() {
   return !!getToken();
@@ -108,7 +117,7 @@ function injectAuthModal() {
       if (!res.ok) throw new Error(data.error || "Invalid code.");
 
       sessionStorage.removeItem(PENDING_EMAIL_KEY);
-      setToken(data.token);
+      setToken(data.token, data.username || pendingEmail);
       hideAuthModal();
       window.dispatchEvent(new CustomEvent("jarvis-signed-in"));
     } catch (e) {
