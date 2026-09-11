@@ -96,10 +96,34 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </ul>
         <button id="upgradeBtn" class="btn btn-primary" type="button">Upgrade to Pro</button>
         <button id="manageBtn" class="btn btn-ghost" type="button" hidden>Manage billing</button>
+
+        <div id="bkashWrap" hidden>
+          <div class="bkash-divider"><span>or pay with bKash</span></div>
+          <p class="bkash-intro">
+            In Bangladesh? Pay <strong id="bkashAmount"></strong> to
+            <strong id="bkashNumber"></strong> (Send Money), then enter the
+            transaction ID below.
+          </p>
+          <button id="bkashOpenBtn" class="btn btn-ghost" type="button">Pay with bKash</button>
+
+          <div id="bkashForm" hidden>
+            <input type="text" id="bkashTrxId" placeholder="Transaction ID (e.g. 9AB1CD2EF3)"
+                   autocomplete="off" maxlength="32">
+            <input type="text" id="bkashSender" placeholder="Your bKash number (optional)"
+                   autocomplete="off" maxlength="20">
+            <button id="bkashSubmitBtn" class="btn btn-primary" type="button">I've paid</button>
+            <p class="bkash-note">
+              We check each payment by hand against our bKash account, so Pro
+              usually activates within a few hours &mdash; not instantly.
+            </p>
+          </div>
+
+          <p id="bkashStatus" class="bkash-status" hidden></p>
+        </div>
       </div>
     </div>
 
-    <p class="pricing-note">Prices in USD. Billing is handled by Polar, our reseller of record &mdash; we never see your card details. No credit card required for Free.</p>
+    <p class="pricing-note">Card prices in USD, billed by Polar, our reseller of record &mdash; we never see your card details. bKash payments are in taka and reviewed by hand. No payment method required for Free.</p>
   </div>
 </section>
 
@@ -240,6 +264,110 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     history.replaceState(null, "", window.location.pathname);
   }
 })();
+
+  // ------------------------
+  // bKash (Bangladesh). Payment is verified by a person against the
+  // bKash app, so submitting a transaction id records a claim and
+  // nothing more - see bkash.py. The UI has to say that plainly, or
+  // someone pays and then waits for an upgrade they think is instant.
+  // ------------------------
+
+  const bkashWrap = document.getElementById("bkashWrap");
+  const bkashForm = document.getElementById("bkashForm");
+  const bkashStatusEl = document.getElementById("bkashStatus");
+
+  function showBkashStatus(message, kind) {
+    bkashStatusEl.textContent = message;
+    bkashStatusEl.className = "bkash-status" + (kind ? " " + kind : "");
+    bkashStatusEl.hidden = false;
+  }
+
+  async function loadBkash() {
+    let config;
+    try {
+      const res = await fetch(`${API_BASE}/billing/bkash/config`);
+      if (!res.ok) return;
+      config = await res.json();
+    } catch (e) {
+      return;  // Unreachable server: just don't offer it.
+    }
+
+    // Not configured on this deployment - never advertise a payment
+    // method that goes nowhere.
+    if (!config.enabled) return;
+
+    document.getElementById("bkashAmount").textContent = `\u09f3${config.amount_bdt}`;
+    document.getElementById("bkashNumber").textContent = config.number;
+    bkashWrap.hidden = false;
+
+    if (!isSignedIn()) return;
+
+    try {
+      const res = await authFetch("/billing/bkash/status");
+      if (!res.ok) return;
+      const status = await res.json();
+      if (status.status === "pending") {
+        showBkashStatus(
+          `We've got your transaction ID (${status.trx_id}) and are checking it. ` +
+          `Pro activates once we've confirmed the payment.`,
+          "pending"
+        );
+        document.getElementById("bkashOpenBtn").hidden = true;
+      } else if (status.status === "rejected") {
+        showBkashStatus(
+          "We couldn't match that transaction ID to a payment. " +
+          "Please double-check it, or get in touch.",
+          "rejected"
+        );
+      }
+    } catch (e) {
+      // Status is a nicety; the form still works without it.
+    }
+  }
+
+  document.getElementById("bkashOpenBtn").addEventListener("click", () => {
+    if (!isSignedIn()) {
+      showAuthModal();
+      return;
+    }
+    bkashForm.hidden = false;
+    document.getElementById("bkashOpenBtn").hidden = true;
+    document.getElementById("bkashTrxId").focus();
+  });
+
+  document.getElementById("bkashSubmitBtn").addEventListener("click", async () => {
+    const trxId = document.getElementById("bkashTrxId").value.trim();
+    const sender = document.getElementById("bkashSender").value.trim();
+    if (!trxId) {
+      showBkashStatus("Please enter the transaction ID from your bKash app.", "rejected");
+      return;
+    }
+
+    const btn = document.getElementById("bkashSubmitBtn");
+    btn.disabled = true;
+    try {
+      const res = await authFetch("/billing/bkash/submit", {
+        method: "POST",
+        body: JSON.stringify({ trx_id: trxId, sender_number: sender }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not record that payment.");
+
+      bkashForm.hidden = true;
+      showBkashStatus(
+        "Thanks - we've got it. We check each payment by hand against our " +
+        "bKash account, so Pro usually activates within a few hours.",
+        "pending"
+      );
+    } catch (e) {
+      showBkashStatus(e.message, "rejected");
+      btn.disabled = false;
+    }
+  });
+
+  loadBkash();
+  window.addEventListener("jarvis-signed-in", loadBkash);
+
 </script>
 
 </body>

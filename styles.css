@@ -1581,3 +1581,74 @@ body.chat-page #stars{ display: none; }
   display: flex;
   justify-content: center;
 }
+
+/* ---- bKash payment (pricing page) ---- */
+
+.bkash-divider{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 14px;
+  color: var(--text-faint);
+  font-size: 13px;
+}
+
+.bkash-divider::before,
+.bkash-divider::after{
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.bkash-intro{
+  margin: 0 0 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.bkash-intro strong{ color: var(--text); }
+
+#bkashForm input{
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+
+#bkashForm input:focus{
+  outline: none;
+  border-color: var(--ring-mid);
+}
+
+.bkash-note{
+  margin: 10px 0 0;
+  color: var(--text-faint);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.bkash-status{
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.bkash-status.pending{
+  border: 1px solid var(--ring-mid);
+  background: rgba(79,168,255,0.10);
+  color: var(--text);
+}
+
+.bkash-status.rejected{
+  border: 1px solid #E5677A;
+  background: rgba(229,103,122,0.12);
+  color: #E5677A;
+}
