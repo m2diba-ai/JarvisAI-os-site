@@ -113,8 +113,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                    autocomplete="off" maxlength="20">
             <button id="bkashSubmitBtn" class="btn btn-primary" type="button">I've paid</button>
             <p class="bkash-note">
-              We check each payment by hand against our bKash account, so Pro
-              usually activates within a few hours &mdash; not instantly.
+              Pro unlocks straight away. We confirm the payment against our
+              bKash account afterwards, so please make sure the transaction ID
+              is correct.
             </p>
           </div>
 
@@ -308,8 +309,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       const status = await res.json();
       if (status.status === "pending") {
         showBkashStatus(
-          `We've got your transaction ID (${status.trx_id}) and are checking it. ` +
-          `Pro activates once we've confirmed the payment.`,
+          `We've got your transaction ID (${status.trx_id}) and are confirming it ` +
+          `against our bKash account.`,
           "pending"
         );
         document.getElementById("bkashOpenBtn").hidden = true;
@@ -355,8 +356,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
       bkashForm.hidden = true;
       showBkashStatus(
-        "Thanks - we've got it. We check each payment by hand against our " +
-        "bKash account, so Pro usually activates within a few hours.",
+        data.activated
+          ? "You're on Pro - enjoy. We'll confirm the payment against our bKash account shortly."
+          : "Thanks - we've got it. We'll confirm this against our bKash account and activate Pro shortly.",
         "pending"
       );
     } catch (e) {
