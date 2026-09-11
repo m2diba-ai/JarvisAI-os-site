@@ -131,11 +131,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <img id="imagePreview" class="jarvis-image-preview" alt="Attached image">
         <button id="imageRemoveBtn" class="jarvis-image-remove-btn" type="button" aria-label="Remove image">&times;</button>
       </span>
+      <div id="fileAttachments" class="jarvis-attachments" hidden></div>
       <div class="jarvis-composer-inner">
-        <button id="attachBtn" class="jarvis-attach-btn" type="button" aria-label="Attach image">
+        <button id="attachBtn" class="jarvis-attach-btn" type="button" aria-label="Attach a file or image">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
         </button>
-        <input type="file" id="imageInput" accept="image/*" hidden>
+        <input type="file" id="imageInput" hidden
+               accept="image/*,.pdf,.docx,.txt,.md,.csv,.json,.xlsx,.xlsm,.pptx,.py,.js,.html,.css">
         <textarea id="chatInput" placeholder="Message Jarvis..." rows="1"></textarea>
         <button id="chatSendBtn" class="jarvis-send-btn" type="button" aria-label="Send">&uarr;</button>
       </div>

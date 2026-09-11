@@ -253,6 +253,79 @@
     }
   }
 
+  // Documents attached to the NEXT message. Separate from
+  // pendingImageBase64: an image goes to the vision model inline as
+  // base64 and is Pro-only, whereas a document is uploaded once, stored
+  // as text server-side, and is free on every plan.
+  let attachedFiles = [];
+
+  function renderFileAttachments() {
+    const tray = document.getElementById("fileAttachments");
+    tray.innerHTML = "";
+    tray.hidden = attachedFiles.length === 0;
+
+    attachedFiles.forEach((file) => {
+      const chip = document.createElement("span");
+      chip.className = "jarvis-attachment-chip";
+
+      const name = document.createElement("span");
+      name.className = "jarvis-attachment-name";
+      name.textContent = file.filename;
+      chip.appendChild(name);
+
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "jarvis-attachment-remove";
+      remove.textContent = "\u00d7";
+      remove.setAttribute("aria-label", `Remove ${file.filename}`);
+      remove.addEventListener("click", () => {
+        attachedFiles = attachedFiles.filter((f) => f.id !== file.id);
+        renderFileAttachments();
+      });
+      chip.appendChild(remove);
+
+      tray.appendChild(chip);
+    });
+  }
+
+  function fileAttachmentError(message) {
+    const tray = document.getElementById("fileAttachments");
+    tray.hidden = false;
+    const note = document.createElement("span");
+    note.className = "jarvis-attachment-error";
+    note.textContent = message;
+    tray.appendChild(note);
+    setTimeout(() => note.remove(), 6000);
+  }
+
+  async function uploadDocument(file) {
+    const body = new FormData();
+    body.append("file", file);
+
+    // authFetch drops its JSON Content-Type for a FormData body so the
+    // browser can set the multipart boundary itself.
+    const res = await authFetch("/files", { method: "POST", body });
+
+    if (res.status === 401) {
+      clearToken();
+      window.dispatchEvent(new CustomEvent("jarvis-signed-out"));
+      return null;
+    }
+
+    let payload = {};
+    try {
+      payload = await res.json();
+    } catch (e) {
+      payload = {};
+    }
+
+    if (!res.ok) {
+      fileAttachmentError(payload.error || `Couldn't read ${file.name}.`);
+      return null;
+    }
+    return payload;
+  }
+
   function clearImage() {
     pendingImageBase64 = null;
     imageInput.value = "";
@@ -260,25 +333,41 @@
     imagePreview.src = "";
   }
 
-  attachBtn.addEventListener("click", () => {
-    if (!isPro) {
-      alert("Image understanding is a Pro feature - upgrade to unlock it.");
-      return;
-    }
-    imageInput.click();
-  });
+  // No Pro check here any more: the same button now attaches documents,
+  // which are free. The image branch below keeps the gate, since image
+  // understanding is still the Pro feature it always was.
+  attachBtn.addEventListener("click", () => imageInput.click());
 
-  imageInput.addEventListener("change", () => {
+  imageInput.addEventListener("change", async () => {
     const file = imageInput.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result;
-      pendingImageBase64 = dataUrl.split(",")[1];
-      imagePreview.src = dataUrl;
-      imagePreviewWrap.hidden = false;
-    };
-    reader.readAsDataURL(file);
+
+    if (file.type.startsWith("image/")) {
+      if (!isPro) {
+        imageInput.value = "";
+        alert("Image understanding is a Pro feature - upgrade to unlock it.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result;
+        pendingImageBase64 = dataUrl.split(",")[1];
+        imagePreview.src = dataUrl;
+        imagePreviewWrap.hidden = false;
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    imageInput.value = "";
+    const chip = { id: `pending-${Date.now()}`, filename: `${file.name} (reading...)` };
+    attachedFiles.push(chip);
+    renderFileAttachments();
+
+    const saved = await uploadDocument(file);
+    attachedFiles = attachedFiles.filter((f) => f.id !== chip.id);
+    if (saved) attachedFiles.push(saved);
+    renderFileAttachments();
   });
 
   imageRemoveBtn.addEventListener("click", clearImage);
@@ -531,10 +620,14 @@
   // non-default model, which /chat/stream doesn't support.
   // ------------------------
 
-  async function sendStreaming(text) {
+  async function sendStreaming(text, fileIds) {
     const res = await authFetch("/chat/stream", {
       method: "POST",
-      body: JSON.stringify({ message: text, conversation_id: currentConversationId }),
+      body: JSON.stringify({
+        message: text,
+        conversation_id: currentConversationId,
+        file_ids: fileIds || [],
+      }),
     });
 
     if (res.status === 401) {
@@ -580,9 +673,14 @@
     }
   }
 
-  async function sendNonStreaming(text, model) {
+  // imageBase64/fileIds are passed in rather than read off the module
+  // state: send() clears the composer before awaiting, so by the time
+  // this runs the state is already empty. Reading pendingImageBase64
+  // here meant no image was ever actually attached.
+  async function sendNonStreaming(text, model, imageBase64, fileIds) {
     const body = { message: text, conversation_id: currentConversationId, model };
-    if (pendingImageBase64) body.image = pendingImageBase64;
+    if (imageBase64) body.image = imageBase64;
+    if (fileIds && fileIds.length) body.file_ids = fileIds;
 
     const res = await authFetch("/chat/web", { method: "POST", body: JSON.stringify(body) });
     hideTyping();
@@ -605,12 +703,26 @@
 
   async function send() {
     const text = chatInput.value.trim();
-    if ((!text && !pendingImageBase64) || sending) return;
+    if ((!text && !pendingImageBase64 && attachedFiles.length === 0) || sending) return;
 
     const model = modelPicker.value || "groq";
-    const usingImage = !!pendingImageBase64;
+    // Captured before the composer is cleared below - see
+    // sendNonStreaming's comment. Pending chips are excluded: their id
+    // is a placeholder, not a real row, until the upload returns.
+    const imageBase64 = pendingImageBase64;
+    const fileIds = attachedFiles
+      .filter((f) => !String(f.id).startsWith("pending-"))
+      .map((f) => f.id);
+    const usingImage = !!imageBase64;
 
-    renderMessage("user", text || "(image)");
+    const attachedNames = attachedFiles
+      .filter((f) => !String(f.id).startsWith("pending-"))
+      .map((f) => f.filename);
+    renderMessage(
+      "user",
+      (text || (usingImage ? "(image)" : "")) +
+        (attachedNames.length ? `\n\n\u{1F4CE} ${attachedNames.join(", ")}` : "")
+    );
     chatInput.value = "";
     chatInput.style.height = "auto";
     scrollToBottom();
@@ -619,12 +731,14 @@
     sendBtn.disabled = true;
     showTyping();
     clearImage();
+    attachedFiles = [];
+    renderFileAttachments();
 
     try {
       if (usingImage || model !== "groq") {
-        await sendNonStreaming(text, model);
+        await sendNonStreaming(text, model, imageBase64, fileIds);
       } else {
-        await sendStreaming(text);
+        await sendStreaming(text, fileIds);
       }
     } catch (e) {
       console.error(e);

@@ -30,8 +30,12 @@ function isSignedIn() {
 
 async function authFetch(path, options = {}) {
   const token = getToken();
+  // A FormData body must NOT carry an explicit Content-Type: the
+  // browser sets it itself so it can include the multipart boundary,
+  // and overriding it here makes the server unable to parse the upload.
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
   const headers = Object.assign(
-    { "Content-Type": "application/json" },
+    isFormData ? {} : { "Content-Type": "application/json" },
     options.headers,
     token ? { Authorization: `Bearer ${token}` } : {}
   );

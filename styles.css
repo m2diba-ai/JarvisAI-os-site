@@ -1487,3 +1487,59 @@ body.chat-page #stars{ display: none; }
   .jarvis-msg-group.assistant .jarvis-bubble{ max-width: 85%; }
 }
 
+
+/* ---- Attached documents (chat composer) ----
+   Distinct from .jarvis-image-preview-wrap above: an image goes to the
+   vision model inline and is Pro, a document is uploaded once and read
+   as text, and is free on every plan. */
+
+.jarvis-attachments{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.jarvis-attachment-chip{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  /* Truncate rather than grow - a long filename must not push the send
+     button out of the composer. */
+  max-width: 240px;
+  padding: 6px 8px 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.jarvis-attachment-name{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jarvis-attachment-remove{
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  padding: 0 2px;
+  color: var(--text-faint);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color .15s ease;
+}
+
+.jarvis-attachment-remove:hover{ color: var(--text); }
+
+.jarvis-attachment-error{
+  padding: 6px 12px;
+  border: 1px solid #E5677A;
+  border-radius: 10px;
+  background: rgba(229,103,122,0.12);
+  color: #E5677A;
+  font-size: 13px;
+}
