@@ -52,9 +52,26 @@ function injectAuthModal() {
         <h3>Sign in</h3>
         <p class="auth-modal-sub">We'll email you a 6-digit code &mdash; no password needed.</p>
 
+        <div id="authGoogleWrap" hidden>
+          <div id="authGoogleBtn"></div>
+          <div class="auth-modal-divider"><span>or</span></div>
+        </div>
+
         <div id="authStepEmail">
           <input type="email" id="authEmailInput" placeholder="you@example.com" autocomplete="email">
           <button id="authSendCodeBtn" class="btn btn-primary" type="button">Send code</button>
+        </div>
+
+        <div class="auth-modal-divider"><span>or use a password</span></div>
+
+        <div id="authStepPassword">
+          <input type="text" id="authUsernameInput" placeholder="Username" autocomplete="username">
+          <input type="password" id="authPasswordInput" placeholder="Password" autocomplete="current-password">
+          <button id="authPasswordBtn" class="btn btn-secondary" type="button">Sign in</button>
+          <p class="auth-modal-switch">
+            <span id="authSwitchPrompt">Don't have an account?</span>
+            <a href="#" id="authSwitchLink">Sign up</a>
+          </p>
         </div>
 
         <div id="authStepCode" hidden>
@@ -72,6 +89,9 @@ function injectAuthModal() {
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) hideAuthModal();
   });
+
+  wirePasswordAuth();
+  loadLoginMethods();
 
   const PENDING_EMAIL_KEY = "jarvis_pending_login_email";
 
@@ -130,6 +150,116 @@ function injectAuthModal() {
   });
 }
 
+// --- Username / password ------------------------------------------
+// The /register and /login routes have existed all along; this page
+// just never offered them, so an account made in the desktop app could
+// not sign in here.
+
+let authSignUpMode = false;
+
+function wirePasswordAuth() {
+  const usernameInput = document.getElementById("authUsernameInput");
+  const passwordInput = document.getElementById("authPasswordInput");
+  const submitBtn = document.getElementById("authPasswordBtn");
+  const switchLink = document.getElementById("authSwitchLink");
+
+  switchLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    authSignUpMode = !authSignUpMode;
+    submitBtn.textContent = authSignUpMode ? "Create account" : "Sign in";
+    document.getElementById("authSwitchPrompt").textContent =
+      authSignUpMode ? "Already have an account?" : "Don't have an account?";
+    switchLink.textContent = authSignUpMode ? "Sign in" : "Sign up";
+    passwordInput.setAttribute(
+      "autocomplete",
+      authSignUpMode ? "new-password" : "current-password"
+    );
+    setAuthError("");
+  });
+
+  submitBtn.addEventListener("click", async () => {
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value;
+    if (!username || !password) {
+      setAuthError("Enter a username and password.");
+      return;
+    }
+    setAuthError("");
+
+    try {
+      const res = await fetch(`${API_BASE}/${authSignUpMode ? "register" : "login"}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not sign in.");
+
+      setToken(data.token, data.username || username);
+      hideAuthModal();
+      window.dispatchEvent(new CustomEvent("jarvis-signed-in"));
+    } catch (e) {
+      setAuthError(e.message);
+    }
+  });
+}
+
+// --- Sign in with Google ------------------------------------------
+// Google Identity Services hands the page a signed ID token, which the
+// server verifies. Not the desktop flow in google_login.py: that one
+// opens a browser and runs a local server on the machine executing it.
+
+function initGoogleSignIn(clientId) {
+  if (!clientId) return;
+
+  const script = document.createElement("script");
+  script.src = "https://accounts.google.com/gsi/client";
+  script.async = true;
+  script.onload = () => {
+    if (!window.google || !google.accounts) return;
+
+    google.accounts.id.initialize({
+      client_id: clientId,
+      callback: async (response) => {
+        try {
+          const res = await fetch(`${API_BASE}/login/google/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ credential: response.credential }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Google sign-in failed.");
+
+          setToken(data.token, data.username);
+          hideAuthModal();
+          window.dispatchEvent(new CustomEvent("jarvis-signed-in"));
+        } catch (e) {
+          setAuthError(e.message);
+        }
+      },
+    });
+
+    google.accounts.id.renderButton(document.getElementById("authGoogleBtn"), {
+      theme: "filled_black",
+      size: "large",
+      width: 280,
+      text: "continue_with",
+    });
+    document.getElementById("authGoogleWrap").hidden = false;
+  };
+  document.head.appendChild(script);
+}
+
+async function loadLoginMethods() {
+  try {
+    const res = await fetch(`${API_BASE}/login/methods`);
+    if (!res.ok) return;
+    initGoogleSignIn((await res.json()).google_client_id);
+  } catch (e) {
+    // Unreachable server - the forms will say so clearly on first use.
+  }
+}
+
 function setAuthError(message) {
   const el = document.getElementById("authError");
   el.textContent = message;
@@ -139,6 +269,8 @@ function setAuthError(message) {
 function showAuthModal() {
   injectAuthModal();
   document.getElementById("authStepEmail").hidden = false;
+  document.getElementById("authUsernameInput").value = "";
+  document.getElementById("authPasswordInput").value = "";
   document.getElementById("authStepCode").hidden = true;
   document.getElementById("authEmailInput").value = "";
   document.getElementById("authCodeInput").value = "";

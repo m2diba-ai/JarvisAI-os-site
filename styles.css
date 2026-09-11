@@ -1543,3 +1543,41 @@ body.chat-page #stars{ display: none; }
   color: #E5677A;
   font-size: 13px;
 }
+
+/* ---- Sign-in modal: password form + Google divider ---- */
+
+.auth-modal-divider{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  color: var(--text-faint);
+  font-size: 13px;
+}
+
+.auth-modal-divider::before,
+.auth-modal-divider::after{
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.auth-modal-switch{
+  margin: 10px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  text-align: center;
+}
+
+.auth-modal-switch a{
+  color: var(--ring-mid);
+  text-decoration: none;
+}
+
+.auth-modal-switch a:hover{ text-decoration: underline; }
+
+#authGoogleBtn{
+  display: flex;
+  justify-content: center;
+}
