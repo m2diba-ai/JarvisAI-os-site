@@ -2,7 +2,7 @@
 // used by pricing.html and chat.html - both need to know who's
 // signed in and call the hosted API with their token.
 
-const API_BASE = "https://jarvis-api-94bm.onrender.com";
+const API_BASE = "https://jarvis-api-pzfx.onrender.com";
 
 const TOKEN_KEY = "jarvis_token";
 const USERNAME_KEY = "jarvis_username";
