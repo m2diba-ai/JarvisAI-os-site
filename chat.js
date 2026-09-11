@@ -333,9 +333,8 @@
     imagePreview.src = "";
   }
 
-  // No Pro check here any more: the same button now attaches documents,
-  // which are free. The image branch below keeps the gate, since image
-  // understanding is still the Pro feature it always was.
+  // No Pro check: documents and images are both free now. The Pro
+  // boundary is the model picker.
   attachBtn.addEventListener("click", () => imageInput.click());
 
   imageInput.addEventListener("change", async () => {
@@ -343,11 +342,7 @@
     if (!file) return;
 
     if (file.type.startsWith("image/")) {
-      if (!isPro) {
-        imageInput.value = "";
-        alert("Image understanding is a Pro feature - upgrade to unlock it.");
-        return;
-      }
+      // No Pro gate: image understanding is free, same as documents.
       const reader = new FileReader();
       reader.onload = () => {
         const dataUrl = reader.result;
