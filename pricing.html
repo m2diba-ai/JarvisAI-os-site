@@ -289,14 +289,33 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     let config;
     try {
       const res = await fetch(`${API_BASE}/billing/bkash/config`);
-      if (!res.ok) return;
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       config = await res.json();
     } catch (e) {
-      return;  // Unreachable server: just don't offer it.
+      // Two different failures used to land here and both returned in
+      // silence, which cost a long debugging session: the page looked
+      // exactly the same whether bKash was switched off on purpose or
+      // the browser simply never got an answer. Losing the second one
+      // quietly is the worse of the two - it is the case where someone
+      // wants to pay, the option exists, and nothing on screen says why
+      // it is missing. An ad or privacy blocker stopping the request is
+      // the likeliest cause, and no user would ever guess that.
+      showBkashStatus(
+        "Couldn't load payment options. An ad blocker or privacy " +
+        "extension may be blocking the request - try reloading, or " +
+        "open this page in a private window.",
+        "rejected"
+      );
+      bkashWrap.hidden = false;
+      document.getElementById("bkashOpenBtn").hidden = true;
+      document.querySelector(".bkash-qr-wrap").hidden = true;
+      document.querySelector(".bkash-intro").hidden = true;
+      return;
     }
 
-    // Not configured on this deployment - never advertise a payment
-    // method that goes nowhere.
+    // Deliberately off for this deployment. Stays silent, unlike the
+    // failure above - never advertise a payment method that goes
+    // nowhere, and there is nothing for the user to act on.
     if (!config.enabled) return;
 
     document.getElementById("bkashAmount").textContent = `\u09f3${config.amount_bdt}`;
