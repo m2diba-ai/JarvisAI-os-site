@@ -1652,3 +1652,19 @@ body.chat-page #stars{ display: none; }
   background: rgba(229,103,122,0.12);
   color: #E5677A;
 }
+
+.bkash-qr-wrap{
+  display: flex;
+  justify-content: center;
+  margin: 0 0 14px;
+}
+
+/* White plate behind the code: QR scanners need light modules on a dark
+   background, and this page is dark. Rendering it straight onto the
+   panel would make it unreadable by most phone cameras. */
+.bkash-qr{
+  padding: 10px;
+  border-radius: 12px;
+  background: #FFFFFF;
+  image-rendering: pixelated;
+}

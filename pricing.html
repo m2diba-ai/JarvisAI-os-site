@@ -100,10 +100,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <div id="bkashWrap" hidden>
           <div class="bkash-divider"><span>or pay with bKash</span></div>
           <p class="bkash-intro">
-            In Bangladesh? Pay <strong id="bkashAmount"></strong> to
-            <strong id="bkashNumber"></strong> (Send Money), then enter the
-            transaction ID below.
+            In Bangladesh? Scan this with bKash and Send Money
+            <strong id="bkashAmount"></strong>, then enter the transaction ID below.
           </p>
+          <div class="bkash-qr-wrap">
+            <img id="bkashQr" class="bkash-qr" alt="bKash payment QR code" width="180" height="180">
+          </div>
           <button id="bkashOpenBtn" class="btn btn-ghost" type="button">Pay with bKash</button>
 
           <div id="bkashForm" hidden>
@@ -298,7 +300,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     if (!config.enabled) return;
 
     document.getElementById("bkashAmount").textContent = `\u09f3${config.amount_bdt}`;
-    document.getElementById("bkashNumber").textContent = config.number;
+    // The number is never sent to the page - it only exists inside this
+    // image. See /billing/bkash/qr.
+    document.getElementById("bkashQr").src = `${API_BASE}/billing/bkash/qr`;
     bkashWrap.hidden = false;
 
     if (!isSignedIn()) return;
