@@ -285,12 +285,32 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     bkashStatusEl.hidden = false;
   }
 
+  // The API sleeps when idle (Render's free tier spins a service down
+  // after a quiet period), and the request that wakes it can fail or
+  // time out while it boots. That is not an error worth showing anyone
+  // - it is a cold start, and the second attempt succeeds - so it is
+  // retried once before the page gives up and says something.
+  //
+  // One retry, not a loop: if waking it were going to work, it works by
+  // now, and anything past that is a real failure that the user should
+  // hear about rather than watch a page spin on.
+  async function fetchBkashConfig() {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const res = await fetch(`${API_BASE}/billing/bkash/config`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+      } catch (e) {
+        if (attempt === 1) throw e;
+        await new Promise((resolve) => setTimeout(resolve, 2500));
+      }
+    }
+  }
+
   async function loadBkash() {
     let config;
     try {
-      const res = await fetch(`${API_BASE}/billing/bkash/config`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      config = await res.json();
+      config = await fetchBkashConfig();
     } catch (e) {
       // Two different failures used to land here and both returned in
       // silence, which cost a long debugging session: the page looked
@@ -301,9 +321,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       // it is missing. An ad or privacy blocker stopping the request is
       // the likeliest cause, and no user would ever guess that.
       showBkashStatus(
-        "Couldn't load payment options. An ad blocker or privacy " +
-        "extension may be blocking the request - try reloading, or " +
-        "open this page in a private window.",
+        "Couldn't load payment options just now. Please reload the " +
+        "page. If it keeps happening, an ad blocker or privacy " +
+        "extension may be blocking the request - try a private window.",
         "rejected"
       );
       bkashWrap.hidden = false;
