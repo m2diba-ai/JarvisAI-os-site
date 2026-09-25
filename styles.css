@@ -10,6 +10,8 @@
 
   --text:          #F3F5FA;
   --text-secondary:#95A0B8;
+  /* The user's chat bubble: a flat grey, lighter than the page. */
+  --bubble-user:#262B36;
   --text-faint:    #576078;
 
   --ring-light: #9BDEFF;
@@ -1178,10 +1180,9 @@ body.chat-page #stars{ display: none; }
   margin-top: 2px;
 }
 
-/* No bubbles. Both sides are set as plain text so the thread reads as a
-   transcript rather than as two people texting, matching the app at
-   /app/ - someone who tries the chat here and then installs should not
-   meet a different-looking product. */
+/* Only the user's messages are boxed; the assistant's replies are plain
+   text. Matches the app at /app/ - someone who tries the chat here and
+   then installs should not meet a different-looking product. */
 .jarvis-bubble{
   padding: 2px 0;
   font-size: 14.5px;
@@ -1190,15 +1191,15 @@ body.chat-page #stars{ display: none; }
   overflow-wrap: anywhere;
 }
 
-/* Right alignment and the dimmer colour are what carry who-said-what
-   now that the panels are gone. The width is capped tighter than the
-   bubble was: ragged-left text is hard to read across a long line, so a
-   long question wraps into a narrow column at the right edge instead of
-   stretching the full width. */
+/* A plain grey bubble, and only on the user's side - the assistant's
+   replies stay unboxed. Flat: background and corner radius, no border
+   or shadow. Matches the app at /app/. */
 .jarvis-msg-group.user .jarvis-bubble{
-  color: var(--text-secondary);
-  text-align: right;
-  max-width: 420px;
+  background: var(--bubble-user);
+  color: var(--text);
+  padding: 10px 15px;
+  border-radius: var(--radius-sm);
+  max-width: 480px;
 }
 
 .jarvis-msg-group.assistant .jarvis-bubble{
