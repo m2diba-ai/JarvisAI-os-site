@@ -1178,24 +1178,30 @@ body.chat-page #stars{ display: none; }
   margin-top: 2px;
 }
 
+/* No bubbles. Both sides are set as plain text so the thread reads as a
+   transcript rather than as two people texting, matching the app at
+   /app/ - someone who tries the chat here and then installs should not
+   meet a different-looking product. */
 .jarvis-bubble{
-  padding: 11px 15px;
-  border-radius: var(--radius-sm);
+  padding: 2px 0;
   font-size: 14.5px;
   line-height: 1.6;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
+/* Right alignment and the dimmer colour are what carry who-said-what
+   now that the panels are gone. The width is capped tighter than the
+   bubble was: ragged-left text is hard to read across a long line, so a
+   long question wraps into a narrow column at the right edge instead of
+   stretching the full width. */
 .jarvis-msg-group.user .jarvis-bubble{
-  background: var(--accent-grad);
-  color: #041022;
-  max-width: 480px;
+  color: var(--text-secondary);
+  text-align: right;
+  max-width: 420px;
 }
 
 .jarvis-msg-group.assistant .jarvis-bubble{
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
   color: var(--text);
   max-width: 640px;
 }
