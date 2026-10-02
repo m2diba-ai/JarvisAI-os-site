@@ -106,20 +106,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div class="jarvis-chat-scroll" id="chatScroll">
       <div class="jarvis-empty" id="emptyState" hidden>
         <div class="jarvis-orb"></div>
-        <h1>Hi, I'm Jarvis.</h1>
-        <p>A text-only taste of the real thing &mdash; chat, memory, and web research. For voice, file access, and opening apps on your own machine, <a href="index.html#get-started" style="color:var(--ring-mid)">download the desktop app</a>.</p>
+        <h1>An assistant that remembers you.</h1>
+        <p>Tell it something about yourself, then ask what it knows &mdash; it will still know next week. For voice, file access, and opening apps on your own machine, <a href="index.html#get-started" style="color:var(--ring-mid)">download the desktop app</a>.</p>
         <div class="jarvis-suggestions">
-          <button class="jarvis-chip" data-text="What's the weather like today?">What's the weather today?</button>
-          <button class="jarvis-chip" data-text="Remember that my favorite color is blue">Remember something about me</button>
-          <button class="jarvis-chip" data-text="Help me write a professional email">Help me write an email</button>
-          <button class="jarvis-chip" data-text="What time is it?">What time is it?</button>
+          <button class="jarvis-chip" data-text="Remember that I'm a computer science student in Dhaka" data-followup="What do you know about me?">Tell Jarvis about you</button>
+          <button class="jarvis-chip" data-text="What happened in tech news today?">What's happening today?</button>
+          <button class="jarvis-chip" data-text="What can you actually do?">What can you do?</button>
+          <button class="jarvis-chip" data-text="Write a Python script that renames every file in a folder by its date">Write me some code</button>
         </div>
       </div>
 
       <div class="jarvis-signedout" id="signedOutState" hidden>
         <div class="jarvis-orb"></div>
-        <h1>Hi, I'm Jarvis.</h1>
-        <p>Sign in to start chatting &mdash; free accounts get 20 messages/day, Pro is unlimited.</p>
+        <h1>An assistant that remembers you.</h1>
+        <p>Most chatbots forget you the moment you close the tab. Jarvis doesn't &mdash; tell it something about yourself and it still knows next week. It searches the live web, reads files you attach, and on the desktop it opens your apps by voice.</p>
+        <p class="jarvis-signedout-note">Free to use &mdash; 20 messages a day, no card needed.</p>
         <button class="btn btn-primary" id="signInPromptBtn">Sign in</button>
       </div>
 

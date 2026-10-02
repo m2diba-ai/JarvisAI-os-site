@@ -1675,3 +1675,22 @@ body.chat-page #stars{ display: none; }
   background: #FFFFFF;
   image-rendering: pixelated;
 }
+
+/* The follow-up prompt offered after a starter whose point only lands on
+   the next message - see offerFollowUp in chat.js. Quieter than the
+   opening starters: a suggestion inside a conversation, not a menu. */
+.jarvis-followup-wrap{
+  display: flex;
+  margin: 2px 0 10px 34px;
+}
+
+.jarvis-followup-chip::before{
+  content: "↳ ";
+  opacity: 0.6;
+}
+
+.jarvis-signedout-note{
+  margin-top: 10px;
+  font-size: 13.5px;
+  color: var(--text-faint);
+}

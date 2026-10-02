@@ -758,12 +758,43 @@
     chatInput.style.height = Math.min(chatInput.scrollHeight, 200) + "px";
   });
 
+  // A starter can carry a follow-up question, offered once its reply has
+  // landed. The thing that makes Jarvis different only shows on the
+  // SECOND message: "remember that I'm a student" earns an
+  // acknowledgement any chatbot would give, and it is the question after
+  // it that demonstrates anything. Mirrors offerFollowUp in the app's
+  // app.js - this page is the same product's shop window, and the demo
+  // should not differ between them.
   document.querySelectorAll(".jarvis-chip").forEach((chip) => {
-    chip.addEventListener("click", () => {
+    chip.addEventListener("click", async () => {
+      const followup = chip.dataset.followup;
       chatInput.value = chip.dataset.text;
-      send();
+      await send();
+      if (followup) offerFollowUp(followup);
     });
   });
+
+  function offerFollowUp(question) {
+    if (document.getElementById("followUpChip")) return;
+
+    const wrap = document.createElement("div");
+    wrap.className = "jarvis-followup-wrap";
+
+    const button = document.createElement("button");
+    button.id = "followUpChip";
+    button.className = "jarvis-chip jarvis-followup-chip";
+    button.type = "button";
+    button.textContent = question;
+    button.addEventListener("click", () => {
+      wrap.remove();
+      chatInput.value = question;
+      send();
+    });
+
+    wrap.appendChild(button);
+    chat.appendChild(wrap);
+    chatScroll.scrollTop = chatScroll.scrollHeight;
+  }
 
   signInPromptBtn.addEventListener("click", showAuthModal);
 
